@@ -1,5 +1,3 @@
-# certifications/urls.py
-
 from django.urls import path
 from .views import CertificateListView, GenerateCertificateView
 

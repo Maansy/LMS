@@ -1,13 +1,10 @@
-# certifications/views.py
-
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.core.files.base import ContentFile
 from .models import Certificate
 from .serializers import CertificateSerializer
-from courses.models import Enrollment, LessonProgress
-from courses.models import Course
+from courses.models import Enrollment, LessonProgress, Course
 from django.utils import timezone
 import io
 from reportlab.pdfgen import canvas

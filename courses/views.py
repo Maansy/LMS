@@ -1,5 +1,3 @@
-# courses/views.py
-
 from rest_framework import generics, permissions, status, parsers
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
@@ -35,6 +33,7 @@ class CourseDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CourseSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsInstructorOfCourse]
 
+
 class ModuleListCreateView(generics.ListCreateAPIView):
     serializer_class = ModuleSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -59,6 +58,7 @@ class ModuleDetailView(generics.RetrieveUpdateDestroyAPIView):
             raise PermissionDenied("You do not have permission to modify this module.")
         return module
 
+
 class LessonListCreateView(generics.ListCreateAPIView):
     serializer_class = LessonSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -81,10 +81,15 @@ class LessonDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_object(self):
         lesson = super().get_object()
         if lesson.module.course.instructor != self.request.user:
-            raise PermissionDenied("You do not have permission to modify this lesson.")
-        if self.request.user.role == 'student' and not Enrollment.objects.filter(student=self.request.user, course=lesson.module.course).exists():
-            raise PermissionDenied("You must be enrolled in the course to view this lesson.")
+            # Check if the user is a student and enrolled in the course
+            if self.request.user.role == 'student':
+                enrollment = Enrollment.objects.filter(student=self.request.user, course=lesson.module.course).exists()
+                if not enrollment:
+                    raise PermissionDenied("You must be enrolled in the course to view this lesson.")
+            else:
+                raise PermissionDenied("You do not have permission to modify this lesson.")
         return lesson
+
 
 class EnrollmentListCreateView(generics.ListCreateAPIView):
     serializer_class = EnrollmentSerializer
@@ -94,12 +99,9 @@ class EnrollmentListCreateView(generics.ListCreateAPIView):
         return Enrollment.objects.filter(student=self.request.user)
 
     def perform_create(self, serializer):
-        course = serializer.validated_data['course']
         if self.request.user.role == 'instructor':
             raise PermissionDenied("Instructors cannot enroll in courses.")
-        if Enrollment.objects.filter(student=self.request.user, course=course).exists():
-            raise PermissionDenied("You are already enrolled in this course.")
-        serializer.save(student=self.request.user)
+        serializer.save()
 
 class LessonProgressUpdateView(generics.UpdateAPIView):
     serializer_class = LessonProgressSerializer

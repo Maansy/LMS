@@ -1,5 +1,3 @@
-# courses/serializers.py
-
 from rest_framework import serializers
 from .models import Course, Module, Lesson, Enrollment, LessonProgress
 
@@ -23,13 +21,27 @@ class CourseSerializer(serializers.ModelSerializer):
         model = Course
         fields = ['id', 'name', 'description', 'instructor', 'modules', 'created_at', 'updated_at']
 
+
 class EnrollmentSerializer(serializers.ModelSerializer):
-    course = CourseSerializer(read_only=True)
     course_id = serializers.PrimaryKeyRelatedField(queryset=Course.objects.all(), source='course', write_only=True)
+    course = serializers.ReadOnlyField(source='course.name')  # Read-only field to show the course name
 
     class Meta:
         model = Enrollment
-        fields = ['id', 'course', 'course_id', 'enrolled_at']
+        fields = ['id', 'course_id', 'course', 'enrolled_at']
+
+    def create(self, validated_data):
+        # Extract course from the validated data
+        course = validated_data.pop('course')
+        student = self.context['request'].user
+
+        # Ensure the student is not already enrolled in the course
+        if Enrollment.objects.filter(student=student, course=course).exists():
+            raise serializers.ValidationError("You are already enrolled in this course.")
+
+        # Create the enrollment
+        enrollment = Enrollment.objects.create(student=student, course=course)
+        return enrollment
 
 class LessonProgressSerializer(serializers.ModelSerializer):
     lesson = LessonSerializer(read_only=True)
