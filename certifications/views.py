@@ -24,7 +24,6 @@ class GenerateCertificateView(APIView):
             course = Course.objects.get(id=course_id)
             enrollment = Enrollment.objects.get(student=request.user, course=course)
             if not LessonProgress.objects.filter(enrollment=enrollment, completed=False).exists():
-                # All lessons are completed
                 certificate, created = Certificate.objects.get_or_create(student=request.user, course=course)
                 if created:
                     buffer = io.BytesIO()

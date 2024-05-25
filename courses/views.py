@@ -81,7 +81,6 @@ class LessonDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_object(self):
         lesson = super().get_object()
         if lesson.module.course.instructor != self.request.user:
-            # Check if the user is a student and enrolled in the course
             if self.request.user.role == 'student':
                 enrollment = Enrollment.objects.filter(student=self.request.user, course=lesson.module.course).exists()
                 if not enrollment:
